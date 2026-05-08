@@ -25,7 +25,18 @@ export default async function handler(req, res) {
       }
     );
 
-    const data = await response.json();
+    const text = await response.text();
+
+    // HF sometimes returns HTML on auth errors — handle gracefully
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return res.status(response.status).json({
+        error: `HF API returned non-JSON (status ${response.status}). Check your VITE_AI_TOKEN — it may be expired or lack inference permissions.`
+      });
+    }
+
     return res.status(response.status).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
