@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { calculateSpeed } from '../utils/haversine';
 
 export function useISS() {
   const [position, setPosition] = useState(null);
@@ -20,28 +19,24 @@ export function useISS() {
     try {
       const now = Date.now();
       const res = await axios.get('https://api.wheretheiss.at/v1/satellites/25544');
+      
+      // API returns velocity in km/s — convert to km/h
+      const speedKmh = res.data.velocity * 3600;
+
       const newPos = {
         lat: parseFloat(res.data.latitude),
         lng: parseFloat(res.data.longitude),
         timestamp: res.data.timestamp,
-        localTime: new Date(now).toLocaleTimeString()
+        localTime: new Date(now).toLocaleTimeString(),
+        speed: speedKmh
       };
 
-      setPosition(prevPos => {
-        if (prevPos && lastFetchTimeRef.current) {
-          // Calculate time difference in seconds
-          const timeDiff = (now - lastFetchTimeRef.current) / 1000;
-          if (timeDiff > 0) {
-            const speed = calculateSpeed(prevPos, newPos, timeDiff);
-            
-            setSpeedHistory(prev => {
-              const newHistory = [...prev, { time: newPos.localTime, speed: speed }];
-              if (newHistory.length > 30) return newHistory.slice(newHistory.length - 30);
-              return newHistory;
-            });
-          }
-        }
-        return newPos;
+      setPosition(newPos);
+
+      setSpeedHistory(prev => {
+        const newHistory = [...prev, { time: newPos.localTime, speed: speedKmh }];
+        if (newHistory.length > 30) return newHistory.slice(newHistory.length - 30);
+        return newHistory;
       });
 
       setTrajectory(prev => {
