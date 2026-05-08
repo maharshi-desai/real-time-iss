@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { calculateSpeed } from '../utils/haversine';
 
 export function useISS() {
   const [position, setPosition] = useState(null);
@@ -19,30 +20,39 @@ export function useISS() {
     try {
       const now = Date.now();
       const res = await axios.get('https://api.wheretheiss.at/v1/satellites/25544');
-      
-      // API returns velocity in km/s — convert to km/h
-      const speedKmh = res.data.velocity * 3600;
 
       const newPos = {
         lat: parseFloat(res.data.latitude),
         lng: parseFloat(res.data.longitude),
         timestamp: res.data.timestamp,
-        localTime: new Date(now).toLocaleTimeString(),
-        speed: speedKmh
+        localTime: new Date(now).toLocaleTimeString()
       };
 
-      setPosition(newPos);
-
-      setSpeedHistory(prev => {
-        const newHistory = [...prev, { time: newPos.localTime, speed: speedKmh }];
-        if (newHistory.length > 30) return newHistory.slice(newHistory.length - 30);
-        return newHistory;
+      // Calculate speed using haversine formula between consecutive positions
+      setPosition(prevPos => {
+        if (prevPos && lastFetchTimeRef.current) {
+          const timeDiff = (now - lastFetchTimeRef.current) / 1000; // in seconds
+          if (timeDiff > 0) {
+            const speed = calculateSpeed(prevPos, newPos, timeDiff);
+            setSpeedHistory(prev => {
+              const newHistory = [...prev, { time: newPos.localTime, speed }];
+              return newHistory.length > 30 ? newHistory.slice(-30) : newHistory;
+            });
+          }
+        } else {
+          // First data point — use API velocity as initial seed (km/s → km/h)
+          const seedSpeed = res.data.velocity * 3600;
+          setSpeedHistory(prev => {
+            const newHistory = [...prev, { time: newPos.localTime, speed: seedSpeed }];
+            return newHistory.length > 30 ? newHistory.slice(-30) : newHistory;
+          });
+        }
+        return newPos;
       });
 
       setTrajectory(prev => {
         const newTraj = [...prev, newPos];
-        if (newTraj.length > 15) return newTraj.slice(newTraj.length - 15);
-        return newTraj;
+        return newTraj.length > 15 ? newTraj.slice(-15) : newTraj;
       });
 
       lastFetchTimeRef.current = now;

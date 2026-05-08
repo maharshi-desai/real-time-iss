@@ -24,7 +24,7 @@ const issIcon = new L.DivIcon({
 export default function ISSTracker() {
   const { position, trajectory, speedHistory, astronauts, autoRefresh, toggleAutoRefresh, manualRefresh } = useISS();
 
-  const currentSpeed = position?.speed ? position.speed.toFixed(2) : (speedHistory.length > 0 ? speedHistory[speedHistory.length - 1].speed.toFixed(2) : 'Loading...');
+  const currentSpeed = speedHistory.length > 0 ? speedHistory[speedHistory.length - 1].speed.toFixed(2) : 'Loading...';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
