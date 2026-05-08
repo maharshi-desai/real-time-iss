@@ -3,7 +3,7 @@ import { MessageSquare, X, Send, Trash2 } from 'lucide-react';
 import { useISS } from '../../hooks/useISS';
 import { useNews } from '../../hooks/useNews';
 
-const HF_API_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct";
+const HF_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
 
 export default function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false);
