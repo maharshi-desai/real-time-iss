@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/open-notify/:path*",
+      "destination": "http://api.open-notify.org/:path*"
+    }
+  ]
+}
