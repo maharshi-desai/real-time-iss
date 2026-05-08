@@ -21,7 +21,7 @@ export function useISS() {
   const fetchISSData = async () => {
     try {
       const now = Date.now();
-      const res = await axios.get('https://api.wheretheiss.at/v1/satellites/25544');
+      const res = await axios.get(`https://api.wheretheiss.at/v1/satellites/25544?t=${Date.now()}`);
 
       const newPos = {
         lat: parseFloat(res.data.latitude),
@@ -41,8 +41,8 @@ export function useISS() {
           });
         }
       } else {
-        // First data point — seed chart with API velocity (km/s → km/h)
-        const seedSpeed = res.data.velocity * 3600;
+        // First data point — seed chart with API velocity (already in km/h)
+        const seedSpeed = res.data.velocity;
         setSpeedHistory([{ time: newPos.localTime, speed: seedSpeed }]);
       }
 
