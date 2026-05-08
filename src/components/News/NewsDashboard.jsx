@@ -95,10 +95,10 @@ export default function NewsDashboard() {
               {/* Image & Rank */}
               <div className="relative shrink-0">
                 <img 
-                  src={article.image || 'https://via.placeholder.com/150'} 
+                  src={article.image || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=150&h=150&fit=cover'} 
                   alt={article.title} 
                   className="w-full sm:w-16 h-40 sm:h-16 object-cover rounded-lg shadow-sm"
-                  onError={(e) => e.target.src = 'https://via.placeholder.com/150'}
+                  onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=150&h=150&fit=cover'}
                 />
                 <div className="absolute -top-2 -left-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-background shadow-sm">
                   {index + 1}
