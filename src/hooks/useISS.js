@@ -16,6 +16,8 @@ export function useISS() {
     autoRefreshRef.current = autoRefresh;
   }, [autoRefresh]);
 
+  const prevPositionRef = useRef(null); // tracks last position for haversine
+
   const fetchISSData = async () => {
     try {
       const now = Date.now();
@@ -29,33 +31,30 @@ export function useISS() {
       };
 
       // Calculate speed using haversine formula between consecutive positions
-      setPosition(prevPos => {
-        if (prevPos && lastFetchTimeRef.current) {
-          const timeDiff = (now - lastFetchTimeRef.current) / 1000; // in seconds
-          if (timeDiff > 0) {
-            const speed = calculateSpeed(prevPos, newPos, timeDiff);
-            setSpeedHistory(prev => {
-              const newHistory = [...prev, { time: newPos.localTime, speed }];
-              return newHistory.length > 30 ? newHistory.slice(-30) : newHistory;
-            });
-          }
-        } else {
-          // First data point — use API velocity as initial seed (km/s → km/h)
-          const seedSpeed = res.data.velocity * 3600;
+      if (prevPositionRef.current && lastFetchTimeRef.current) {
+        const timeDiff = (now - lastFetchTimeRef.current) / 1000; // seconds
+        if (timeDiff > 0) {
+          const speed = calculateSpeed(prevPositionRef.current, newPos, timeDiff);
           setSpeedHistory(prev => {
-            const newHistory = [...prev, { time: newPos.localTime, speed: seedSpeed }];
+            const newHistory = [...prev, { time: newPos.localTime, speed }];
             return newHistory.length > 30 ? newHistory.slice(-30) : newHistory;
           });
         }
-        return newPos;
-      });
+      } else {
+        // First data point — seed chart with API velocity (km/s → km/h)
+        const seedSpeed = res.data.velocity * 3600;
+        setSpeedHistory([{ time: newPos.localTime, speed: seedSpeed }]);
+      }
 
+      // Update refs BEFORE setting state
+      prevPositionRef.current = newPos;
+      lastFetchTimeRef.current = now;
+
+      setPosition(newPos);
       setTrajectory(prev => {
         const newTraj = [...prev, newPos];
         return newTraj.length > 15 ? newTraj.slice(-15) : newTraj;
       });
-
-      lastFetchTimeRef.current = now;
 
     } catch (error) {
       console.error("Error fetching ISS location:", error);
