@@ -7,7 +7,7 @@ export function useISS() {
   const [trajectory, setTrajectory] = useState([]);
   const [speedHistory, setSpeedHistory] = useState([]);
   const [astronauts, setAstronauts] = useState({ count: 0, names: [] });
-  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const lastFetchTimeRef = useRef(null);
   
   const autoRefreshRef = useRef(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -28,9 +28,9 @@ export function useISS() {
       };
 
       setPosition(prevPos => {
-        if (prevPos) {
+        if (prevPos && lastFetchTimeRef.current) {
           // Calculate time difference in seconds
-          const timeDiff = (now - lastFetchTime) / 1000;
+          const timeDiff = (now - lastFetchTimeRef.current) / 1000;
           if (timeDiff > 0) {
             const speed = calculateSpeed(prevPos, newPos, timeDiff);
             
@@ -50,7 +50,7 @@ export function useISS() {
         return newTraj;
       });
 
-      setLastFetchTime(now);
+      lastFetchTimeRef.current = now;
 
     } catch (error) {
       console.error("Error fetching ISS location:", error);
