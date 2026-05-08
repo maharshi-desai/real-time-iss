@@ -3,7 +3,7 @@ import { MessageSquare, X, Send, Trash2 } from 'lucide-react';
 import { useISS } from '../../hooks/useISS';
 import { useNews } from '../../hooks/useNews';
 
-const HF_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+
 
 export default function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,16 +67,11 @@ User Query: ${userMessage.content}`;
       // Format for Mistral Instruct
       const prompt = `<s>[INST] ${systemPrompt} [/INST]`;
 
-      const response = await fetch(HF_API_URL, {
-        headers: {
-          Authorization: `Bearer ${hfToken}`,
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: { max_new_tokens: 150, temperature: 0.1 }
-        }),
+      // Route through Vercel serverless proxy to avoid CORS
+      const response = await fetch('/api/chat', {
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        body: JSON.stringify({ prompt, token: hfToken }),
       });
 
       const result = await response.json();
