@@ -49,43 +49,38 @@ export default function ChatBubble() {
       
       const newsContext = articles.slice(0, 10).map((a, i) => `${i + 1}. ${a.title} (${a.source.name})`).join('\n');
 
-      const systemPrompt = `You are a strict dashboard assistant. You MUST ONLY answer questions using the provided dashboard data below. If the user asks something outside this data, you MUST reply EXACTLY with: "I only know dashboard data. I cannot answer that."
+      const systemPrompt = `You are a strict dashboard assistant. Answer ONLY using the data below. If asked something outside this data, reply: "I only know dashboard data."
 
 DASHBOARD DATA:
 ISS Location: Lat ${currentLat}, Lng ${currentLng}
 ISS Speed: ${currentSpeed} km/h
 Top News Headlines:
-${newsContext}
-
-User Query: ${userMessage.content}`;
+${newsContext}`;
 
       const hfToken = import.meta.env.VITE_AI_TOKEN;
       if (!hfToken || hfToken === 'YOUR_HF_TOKEN') {
         throw new Error("Missing AI Token");
       }
 
-      // Format for Mistral Instruct
-      const prompt = `<s>[INST] ${systemPrompt} [/INST]`;
-
       // Route through Vercel serverless proxy to avoid CORS
       const response = await fetch('/api/chat', {
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
-        body: JSON.stringify({ prompt, token: hfToken }),
+        body: JSON.stringify({ systemPrompt, userMessage: userMessage.content, token: hfToken }),
       });
 
       const result = await response.json();
       
       let aiResponseText = "Sorry, I couldn't generate a response.";
-      if (Array.isArray(result) && result[0]?.generated_text) {
-         // Extract only the generated part after [/INST]
-         aiResponseText = result[0].generated_text.split('[/INST]').pop().trim();
+      if (result.choices && result.choices[0]?.message?.content) {
+        aiResponseText = result.choices[0].message.content.trim();
       } else if (result.error) {
-         console.error("HF API Error:", result.error);
-         aiResponseText = "API Error: " + result.error;
+        console.error("HF API Error:", result.error);
+        aiResponseText = "API Error: " + result.error;
       }
 
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponseText }]);
+
 
     } catch (error) {
       console.error("Chat Error:", error);
